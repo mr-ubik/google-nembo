@@ -1,4 +1,4 @@
-# TensorFlow + GPU + Keras + Jupyter + Docker + Google Cloud = <3 
+# TensorFlow + GPU + Keras + Jupyter + Docker + Google Cloud = <3
 
 # TOC
 
@@ -31,9 +31,9 @@ The current version of TensorFlow (1.4.0 as of 30/11/2017) when installed using 
 The following command will instantiate a
 - 4 cores
 - 26 Gb Ram
-- OS:Ubuntu 16.04 
+- OS:Ubuntu 16.04
 - 100Gb SSD for boot disk and most importantly access to a Nvidia K80
-	
+
 <!-- --service-account "698553121915-compute@developer.gserviceaccount.com" \ -->
 ```bash
 #!/bin/bash
@@ -51,8 +51,7 @@ gcloud beta compute --project "{PROJECT}" instances create "dl-lab-gpu" \
 ## Installing the prerequisites package
 
 ```bash
-apt-get update -y && apt-get upgrade -y
-apt-get install \
+apt-get update -y && apt-get upgrade -y && apt-get install -y \
 	build-essential \
     curl \
     wget \
@@ -72,7 +71,7 @@ apt-get install \
 curl -O http://www.nvidia.com/content/DriverDownload-March2009/confirmation.php?url=/tesla/384.66/nvidia-driver-local-repo-ubuntu1604-384.66_1.0-1_ppc64el.deb&lang=us&type=Tesla
 ```
 
-## Install cuda-toolkit v8.0  
+## Install cuda-toolkit v8.0
 
 Version 9.0 as said it is not supported with the binary TensorFlow (which is the one we are going to use).
 We are going to download the network version of the deb [from this page](https://developer.nvidia.com/cuda-80-ga2-download-archive).
@@ -83,11 +82,14 @@ We are going to download the network version of the deb [from this page](https:/
 echo "Checking for CUDA and installing."
 # Check for CUDA and try to install.
 if ! dpkg-query -W cuda; then
-  # The 16.04 installer works with 16.10.
-  curl -O https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_8.0.61-1_amd64.deb
-  dpkg -i cuda-repo-ubuntu1604_8.0.61-1_amd64.deb
-  apt-get update -y
-  apt-get install cuda -y
+    # The 16.04 installer works with 16.10.
+    curl -O https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_8.0.61-1_amd64.deb
+
+    dpkg -i cuda-repo-ubuntu1604_8.0.61-1_amd64.deb
+
+    apt-get update -y && apt-get install -y \
+        cuda \
+        cuda-toolkit-8-0
 fi
 ```
 
@@ -98,15 +100,20 @@ We can test the installation with `nvidia-smi`.
 
 ```bash
 #!/bin/bash
-echo "Checking for cuDNN and installing."
-# Check for CUDA and try to install.
-if ! dpkg-query -W cudnn; then
-  # The 16.04 installer works with 16.10.
-  curl -O https://developer.nvidia.com/compute/machine-learning/cudnn/secure/v7.0.4/prod/8.0_20171031/Ubuntu16_04-x64/libcudnn7_7.0.4.31-1+cuda8.0_amd64
-  dpkg -i libcudnn7_7.0.4.31-1+cuda8.0_amd64.deb
-  apt-get update
-  apt-get install cudnn
-fi
+curl -O https://developer.nvidia.com/compute/machine-learning/cudnn/secure/v7.0.4/prod/8.0_20171031/Ubuntu16_04-x64/libcudnn7_7.0.4.31-1+cuda8.0_amd64
+
+dpkg -i libcudnn7_7.0.4.31-1+cuda8.0_amd64.deb
+
+curl -O https://developer.nvidia.com/compute/machine-learning/cudnn/secure/v7.0.4/prod/8.0_20171031/Ubuntu16_04-x64/libcudnn7-doc_7.0.4.31-1+cuda8.0_amd64
+
+dpkg -i libcudnn7-doc_7.0.4.31-1+cuda8.0_amd64
+
+echo "Testing cuDNN"
+
+cp -r /usr/src/cudnn_samples_v7/ $HOME
+cd  $HOME/cudnn_samples_v7/mnistCUDNN
+make clean && make
+./mnistCUDNN
 ```
 
 ## Install nvidia-docker
@@ -117,13 +124,13 @@ fi
 ```bash
 #!/bin/bash
 echo "Adding Docker’s official GPG key"
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add - 
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
 ehco "Set up the Docker stable repository."
 sudo add-apt-repository \
    "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
    $(lsb_release -cs) \
    stable"
-   
+
 sudo apt-get -y update
 sudo apt-get -y install docker-ce
 ```
@@ -151,7 +158,7 @@ sudo pkill -SIGHUP dockerd
 docker run --runtime=nvidia --rm nvidia/cuda nvidia-smi
 ```
 
-### Add user to docker groups 
+### Add user to docker groups
 
 Always having to type `sudo` before `docker` or `nvidia-docker` is a pain. We can easily bypass this need by adding users to the docker group.
 
